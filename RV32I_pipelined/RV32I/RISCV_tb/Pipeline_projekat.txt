@@ -1,0 +1,33 @@
+Shift right arithmetic pomera binarni broj u desno kopirajući MSB (a time i znak signed broja)
+
+I SRA i SRAI su R-instrukcije. Ali se razlikuju po opkodu što znači da će immediate unit SRAI prepoznati kao I-instrukciju.
+Tu moraš promeniti da je prepoznaje kao R-instrukciju da bi shamt produžio kao unsigned vrednost.
+To sam rešio tako što sam u Immediate unit-u dodao tip shamt instrukcijekoji ima isti opkod kao i i-instrukcija ali drugačiji funct3 (jer je jedina I-instrukcija koja ima takav funct3 SRAI i SRLI funkcija, a ona mi ne treba). Odkomentarisao sam constant za shamt instrukciju.
+Ako je i instrukcjija sa opkodom koji odgovara SRAI finkciji onda se shamt produži MSB-om. Extenzija ima samo 20 bita pa se mora produžiti dvaput da bi uhvatili 32 bita.
+
+U ALU_ops_pkg paketu sam odkomentarisao opkod za SRA funkciju.
+
+U ALU_simple sam dodao signale sra_res, ext i n.
+sra_res služi da prihvati vrednost nakon shifta.
+ext je 32-bitna extenzija, njom popunjavam sa leve strane broj koji shiftujem; ona uzima vrednost MSB.
+n je broj bitova koliko puta treba da se shifruje. Dobija se konverzijom signala b_i.
+Prosledio sam signal na izlaz res_s.
+
+U alu_dekoderu sam dodao da ako unesem r ili i-instrukciju proverava se opkod da li je jednak 101(kod za srl, srli, sra i srai) i šalje ga alu jedinici.
+
+Assembly code:
+0000000 01010 01010 000 01010 0010011 addi x10 x10 10
+0000000 01001 01011 000 01011 0010011 addi x11 x11 9
+0000000 01010 01010 000 01010 0010011 addi x10 x10 10
+0100000 00001 01010 101 01010 0010011 srai x10 x10 1 (x10=10)
+0100000 00001 01011 101 01011 0010011 srai x11 x11 1 (x11=4)
+0000000 11111 01100 000 01100 0010011 addi x12 x12 31
+0000000 00001 01100 000 01100 0010011 addi x12 x12 31 (x12=32)
+0100000 01011 01100 101 01100 0110011 sra x12 x12 x11 (x12=2)
+
+0000000 01011 01011 000 01011 0010011 addi x11 x11 11 ???
+0000000 01011 01010 000 01000 1100011 beq x10 x11 4
+0000000 01011 01010 000 01100 0110011 add x12 x10 x11
+0000000 01011 01010 000 01101 0110011 add x13 x10 x11
+
+beq imm 00100000000000 = 4
